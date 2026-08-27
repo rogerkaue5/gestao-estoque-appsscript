@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estoque Bancada TechCorp v1.8</title>
+  
+  <!-- BIBLIOTECA DE GRÁFICOS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    :root { --cor-roxo: #57326b;
+--cor-magenta: #ce184c; --cor-laranja: #f37021; --cor-azul: #2980b9; --cor-fundo: #f8f9fa; --cor-texto: #333; --cor-borda: #ccc; --cor-sucesso: #27ae60; --cor-erro: #c0392b; --cor-alerta: #f39c12; --cor-dashboard: #00897b;
+}
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+    body { background-color: var(--cor-fundo); color: var(--cor-texto); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start;
+min-height: 100vh; }
+    .app-wrapper { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px;
+}
+    .container { background-color: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; position: relative;
+border-top: 5px solid var(--cor-roxo); }
+    .cabecalho-app { text-align: center; margin-bottom: 25px;
+}
+    .cabecalho-app h2 { color: var(--cor-roxo); margin: 0; font-size: 24px; letter-spacing: -0.5px;
+}
+    .versao { display: inline-block; background-color: var(--cor-laranja); color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px;
+font-weight: bold; vertical-align: middle; margin-left: 5px; }
+
+    /* NOVA BARRA DE USUÁRIO (ESTILO IMAGEM) */
+    .barra-usuario { 
+      display: none; 
+      background-color: #f1f3f4; 
+      border-left: 5px solid var(--cor-roxo); 
+      padding: 12px 18px; 
+      border-radius: 6px; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .barra-usuario strong { color: var(--cor-roxo); }
+    .btn-sair-link { color: var(--cor-erro); font-weight: bold; cursor: pointer; text-decoration: none; border: none; background: none; }
+
+    .tela { display: none; } .tela.ativa { display: block;
+}
+    .btn-menu { display: block; width: 100%; padding: 16px; margin-bottom: 12px; color: white; border: none; border-radius: 8px;
+font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+    .btn-op-comum { background-color: var(--cor-roxo); } .btn-op-compra { background-color: var(--cor-laranja); } .btn-op-resumo { background-color: var(--cor-magenta);
+} .btn-op-pendente { background-color: var(--cor-azul); }
+    .btn-op-rh { background-color: #34495e; }
+    .btn-op-dashboard { background-color: var(--cor-dashboard); }
+
+    .form-group { margin-bottom: 15px;
+text-align: left;}
+    .form-row { display: flex; gap: 10px; } .form-row > div { flex: 1;
+}
+    label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #555; text-transform: uppercase;
+}
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--cor-borda); border-radius: 6px; font-size: 14px;
+background-color: #fafafa; }
+    
+    /* VALIDAÇÃO DE CAMPOS */
+    .campo-invalido { border: 2px solid var(--cor-erro) !important; background-color: #fdf2f2 !important; }
+
+    .botoes-acao { display: flex; gap: 10px; margin-top: 25px;
+}
+    .btn-salvar { flex: 2; background-color: var(--cor-sucesso); color: white; border: none; padding: 14px; border-radius: 6px; cursor: pointer;
+font-weight: bold; }
+    .btn-voltar { flex: 1; background-color: #95a5a6; color: white; border: none; padding: 14px; border-radius: 6px;
+cursor: pointer; font-weight: bold; }
+    .btn-notificar { background-color: var(--cor-erro); color: white; border: none; padding: 10px; border-radius: 6px;
+cursor: pointer; font-weight: bold; font-size: 13px; }
+    .card-compra { border: 1px solid var(--cor-azul); border-left: 5px solid var(--cor-azul);
+padding: 12px; border-radius: 6px; background-color: #f0f8ff; position: relative; }
+    .card-titulo { font-weight: bold; font-size: 15px; color: var(--cor-azul);
+margin-bottom: 5px; padding-right: 30px;}
+    .card-info { font-size: 13px; color: #555; margin: 2px 0;
+}
+    .card-status { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: bold; padding: 3px 8px; border-radius: 10px;
+background-color: #d1ecf1; color: #0c5460; }
+    .card-atraso { background-color: #f8d7da; color: #721c24;
+}
+    .btn-receber-card { background-color: var(--cor-sucesso); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold;
+cursor: pointer; margin-top: 10px; width: 100%;}
+    .btn-cancelar-card { position: absolute; top: 10px; right: 10px; background: none;
+border: none; color: var(--cor-erro); font-size: 16px; cursor: pointer; font-weight: bold; }
+    .modal-overlay { display: none; position: absolute;
+top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 20; border-radius: 10px; justify-content: center; align-items: center; padding: 15px;
+}
+    .modal-content { background: white; padding: 25px; border-radius: 8px; width: 100%; text-align: center; border-top: 4px solid var(--cor-azul);
+max-height: 90vh; overflow-y: auto;}
+    #loading { display: flex; position: absolute; top: 0; left: 0; width: 100%;
+height: 100%; background: rgba(255,255,255,0.95); border-radius: 10px; justify-content: center; align-items: center; flex-direction: column; z-index: 10;
+}
+    .spinner { border: 4px solid rgba(0,0,0,0.1); border-left-color: var(--cor-magenta); border-radius: 50%; width: 45px; height: 45px;
+animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg);
+} }
+    #toast { visibility: hidden; min-width: 280px; background-color: #333; color: #fff; text-align: center; border-radius: 8px;
+padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); opacity: 0; transition: 0.4s;
+}
+    #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+    .tabela-container { overflow-x: auto;
+max-height: 400px; overflow-y: auto; border: 1px solid var(--cor-borda); border-radius: 6px; margin-bottom: 15px; }
+    table { width: 100%;
+border-collapse: collapse; font-size: 13px; } th, td { border-bottom: 1px solid var(--cor-borda); padding: 12px 10px; } th { background-color: var(--cor-roxo);
+color: white; position: sticky; top: 0; font-size: 11px; }
+    .tr-critico { background-color: #fdf2f2; color: var(--cor-erro); font-weight: bold;
+border-left: 4px solid var(--cor-erro); } .tr-baixo { background-color: #fff9e6; color: #d35400; font-weight: bold; border-left: 4px solid var(--cor-alerta);
+}
+    .rodape-creditos { text-align: center; color: #7f8c8d; font-size: 12px; margin-top: 10px;
+}
+    /* Estilo para lista de RH */
+    .item-rh { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+    .btn-excluir-rh { color: var(--cor-erro); border: none; background: none; font-weight: bold; cursor: pointer; }
+
+    /* ESTILOS ESPECÍFICOS DASHBOARD */
+    .dash-secao { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+    .dash-titulo { font-size: 16px; font-weight: bold; color: var(--cor-dashboard); margin-bottom: 15px; display: block; text-transform: uppercase; }
+    .chart-container { position: relative; height: 250px; width: 100%; margin-top: 15px; }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrapper">
+    
+    <!-- BARRA DE USUÁRIO (ESTILO IMAGEM) -->
+    <div id="barra-usuario-topo" class="barra-usuario">
+      <span>Logado como: <strong id="nome-operador-logado">...</strong></span>
+      <button class="btn-sair-link" onclick="efetuarLogout()">Sair da Conta</button>
+    </div>
+
+    <div class="container">
+      <div id="loading"><div class="spinner"></div><p style="font-weight: bold; color: var(--cor-roxo);">Processando...</p></div>
+
+      <!-- TELA DE LOGIN -->
+      <div id="tela-login" class="tela ativa">
+        <div class="cabecalho-app"><h2>Estoque Bancada TechCorp <span class="versao">v1.8</span></h2></div>
+        <div class="form-group">
+          <label>Login</label>
+          <input type="text" id="login-user" placeholder="Usuário">
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="login-pass" placeholder="Senha">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+          <input type="checkbox" id="login-manter" style="width:auto; cursor:pointer;">
+          <label for="login-manter" style="margin:0; text-transform: none; cursor:pointer;">Manter senha salva</label>
+        </div>
+        <button class="btn-menu btn-op-comum" onclick="efetuarLogin()">Entrar no Sistema</button>
+      </div>
+
+      <div id="modal-confirm" class="modal-overlay">
+        <div class="modal-content" style="border-top-color: var(--cor-erro);">
+          <h3 style="color: var(--cor-erro); margin-top: 0;">Confirmar Envio?</h3>
+          <p style="font-size: 13px;">Deseja enviar o relatório de estoque crítico para todos os operadores agora?</p>
+          <div class="botoes-acao"><button class="btn-voltar" onclick="fecharModal('modal-confirm')">Cancelar</button><button class="btn-salvar" style="background-color: var(--cor-erro);"
+onclick="processarEnvioMassa()">Enviar</button></div>
+        </div>
+      </div>
+
+      <div id="modal-cancelar" class="modal-overlay">
+        <div class="modal-content" style="border-top-color: var(--cor-erro);">
+          <h3 style="color: var(--cor-erro); margin-top: 0;">Cancelar Pedido</h3>
+          <p id="txt-cancelar-nome" style="font-size: 14px; font-weight: bold;"></p>
+          <input type="hidden" id="canc-id-compra">
+          <div class="form-group"><label>Motivo</label><select id="canc-motivo" class="select-motivo-canc"></select></div>
+          <div class="botoes-acao"><button class="btn-voltar" onclick="fecharModal('modal-cancelar')">Voltar</button><button class="btn-salvar" style="background-color: var(--cor-erro);"
+onclick="processarCancelamento()">Cancelar</button></div>
+        </div>
+      </div>
+
+      <div id="modal-receber" class="modal-overlay">
+        <div class="modal-content">
+          <h3 style="color: var(--cor-azul); margin-top: 0;">Receber Material</h3>
+          <p id="txt-receber-nome" style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: #444;"></p>
+          
+          <input type="hidden" id="rec-id-compra">
+          <input type="hidden" id="rec-id-item">
+ 
+          <input type="hidden" id="rec-faltam">
+
+          <div class="form-group">
+            <label>Como o pedido chegou?</label>
+            <select id="rec-tipo-chegada" onchange="toggleTipoRecebimento()" style="border: 2px solid var(--cor-azul); font-weight: bold; color: var(--cor-azul); background-color: #f0f8ff;">
+              <option value="Completo" selected>✔ Chegou tudo (Completo)</option>
+              <option value="Parcial">⚠ Faltou item (Parcial)</option>
+  
+           </select>
+          </div>
+          
+          <div class="form-group" id="div-rec-qtd" style="display:none;">
+            <label>Qual quantidade chegou hoje?</label>
+            <input type="number" id="rec-qtd" min="1" placeholder="Ex: 5">
+          </div>
+          
+     
+      <div id="div-rec-checkbox" style="display:none; align-items: center; gap: 8px; margin-bottom: 10px; background: #fff3cd; padding: 10px; border-radius: 6px;
+border: 1px solid #ffeeba;">
+            <input type="checkbox" id="rec-encerrar" onchange="toggleMotivoEncerramento()" style="width:auto;
+cursor: pointer;">
+            <label for="rec-encerrar" style="margin:0; font-size:12px; cursor: pointer;
+color: #856404; font-weight: bold;">O FORNECEDOR NÃO VAI ENTREGAR O RESTO (Encerrar pedido)</label>
+          </div>
+          
+          <div class="form-group" id="grupo-rec-motivo" style="display:none;">
+            <label>Motivo da falta</label>
+            <select id="rec-motivo" class="select-motivo-canc"></select>
+          </div>
+          
+          <div class="botoes-acao">
+            <button class="btn-voltar" onclick="fecharModal('modal-receber')">Cancelar</button>
+            <button class="btn-salvar" onclick="processarRecebimento()">Confirmar Entrada</button>
+          
+</div>
+        </div>
+      </div>
+
+      <div id="tela-menu" class="tela">
+        <div class="cabecalho-app"><h2>Estoque TechCorp <span class="versao">v1.8</span></h2></div>
+        <button class="btn-menu btn-op-comum" onclick="mostrarTela('tela-operacao')">Nova Operação</button>
+        <button class="btn-menu btn-op-compra" onclick="mostrarTela('tela-compra')">Registrar Compra</button>
+        <button class="btn-menu btn-op-pendente" onclick="abrirPendentes()">📦 Compras em Andamento</button>
+        <button class="btn-menu btn-op-resumo" onclick="abrirResumo()">Resumo</button>
+        <button class="btn-menu btn-op-dashboard" onclick="abrirDashboard()">📈 Dashboard de Consumo</button>
+        <!-- BOTÃO COM ID E DISPLAY NONE PARA CONTROLE ADM -->
+        <button id="btn-gestao-rh" class="btn-menu btn-op-rh" onclick="abrirGestaoRH()" style="display: none;">Gestão de RH</button>
+      </div>
+
+      <div id="tela-operacao" class="tela">
+  
+       <div class="cabecalho-app"><h2>Operação</h2></div>
+        <div class="form-group"><label>Tipo</label><select id="op-tipo" onchange="verificarTipo()"><option value="Entrada">Entrada</option><option value="Saída" selected>Saída</option></select></div>
+        <div class="form-row"><div class="form-group"><label>Data</label><input type="date" id="op-data"></div><div class="form-group"><label>Hora</label><input type="time" id="op-hora"></div></div>
+        <div class="form-group"><label>Material</label><select id="op-item" class="select-item-estoque"></select></div>
+        <div class="form-group"><label>Qtd</label><input type="number" id="op-qtd" min="1" value="1"></div>
+        <div id="grupo-motivo" class="form-group"><label>Motivo</label><select id="op-motivo" class="select-motivo"></select></div>
+        <div class="form-group"><label>Técnico</label><select id="op-tecnico" class="select-tecnico"></select></div>
+      
+  <div class="botoes-acao"><button class="btn-voltar" onclick="mostrarTela('tela-menu')">Voltar</button><button class="btn-salvar" onclick="salvarOperacao()">Registrar</button></div>
+      </div>
+
+      <div id="tela-compra" class="tela">
+        <div class="cabecalho-app"><h2>Nova Compra</h2></div>
+        <div class="form-group"><label>Item</label><select id="compra-item" class="select-item-limpo"></select></div>
+        <div class="form-group"><label>Fornecedor</label><input list="lista-fornecedores" id="compra-fornecedor"><datalist id="lista-fornecedores"></datalist></div>
+        <div class="form-group"><label>Qtd</label><input type="number" id="compra-qtd" value="1"></div>
+        <div class="form-group"><label>Total R$</label><input type="number" id="compra-valor" step="0.01"></div>
+        <div class="form-group"><label>Previsão</label><input type="date" id="compra-previsao"></div>
+        <div class="botoes-acao"><button class="btn-voltar" onclick="mostrarTela('tela-menu')">Voltar</button><button class="btn-salvar" onclick="salvarCompra()" style="background-color: var(--cor-laranja);">Gravar</button></div>
+      </div>
+
+      <div id="tela-pendentes" class="tela">
+        <div class="cabecalho-app"><h2>Pedidos</h2></div>
+        <div id="lista-pendentes" style="display:flex;
+flex-direction:column; gap:10px;"></div>
+        <button class="btn-voltar" onclick="mostrarTela('tela-menu')" style="width:100%;
+margin-top:10px;">Voltar</button>
+      </div>
+
+      <div id="tela-resumo" class="tela">
+        <div class="cabecalho-app"><h2 style="color: var(--cor-magenta);">Resumo do Estoque</h2></div>
+        <div class="form-group"><input type="text" id="busca-resumo" placeholder="🔍 Buscar..." onkeyup="filtrarResumo()"></div>
+        <div style="display: flex;
+gap: 10px; margin-bottom: 15px; align-items: center;">
+          <select id="ordem-resumo" onchange="aplicarOrdem()" style="flex: 2;">
+            <option value="critico" selected>Críticos</option>
+            <option value="alfabetica">A-Z</option>
+          </select>
+          <button class="btn-notificar" onclick="document.getElementById('modal-confirm').style.display = 'flex';" style="flex: 1;">🚨 Notificar</button>
+        </div>
+        <div class="tabela-container"><table><thead><tr><th>Material</th><th style="text-align:center;">Qtd</th><th style="text-align:center;">Baixo</th><th style="text-align:center;">Crit.</th></tr></thead><tbody id="corpo-resumo"></tbody></table></div>
+      
+  <button class="btn-voltar" onclick="mostrarTela('tela-menu')" style="width:100%">Voltar</button>
+      </div>
+
+      <!-- TELA GESTÃO DE RH -->
+      <div id="tela-rh" class="tela">
+        <div class="cabecalho-app"><h2>Gestão de Equipe</h2></div>
+        
+        <div class="form-group">
+          <label>Tipo de Membro</label>
+          <select id="rh-tipo" onchange="toggleCamposRH()">
+            <option value="Técnico" selected>Técnico (Apenas Nome)</option>
+            <option value="Operador">Operador (Acesso ao Sistema)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Nome Completo</label>
+          <input type="text" id="rh-nome">
+        </div>
+
+        <div id="campos-operador" style="display:none;">
+          <div class="form-group"><label>E-mail (Alertas)</label><input type="email" id="rh-email"></div>
+          <div class="form-group"><label>Login</label><input type="text" id="rh-login"></div>
+          <div class="form-group"><label>Senha</label><input type="password" id="rh-senha"></div>
+        </div>
+
+        <button class="btn-menu btn-op-comum" style="padding:12px; font-size:14px;" onclick="salvarNovoRH()">Cadastrar Ativo</button>
+        
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+        <h3 style="font-size: 15px; color: var(--cor-roxo);">Membros Ativos</h3>
+        <div id="lista-rh-ativos" style="margin-bottom: 20px;"></div>
+
+        <button class="btn-voltar" onclick="mostrarTela('tela-menu')" style="width:100%">Voltar</button>
+      </div>
+
+      <!-- TELA DASHBOARD -->
+      <div id="tela-dashboard" class="tela">
+        <div class="cabecalho-app"><h2 style="color: var(--cor-dashboard);">Dashboard</h2></div>
+        
+        <!-- FILTRO DE PERÍODO -->
+        <div class="dash-secao">
+          <div class="form-row">
+            <div class="form-group"><label>Início</label><input type="date" id="dash-inicio"></div>
+            <div class="form-group"><label>Fim</label><input type="date" id="dash-fim"></div>
+          </div>
+          <button class="btn-menu btn-op-dashboard" style="padding:12px; font-size:14px;" onclick="gerarAnaliseDashboard()">Gerar Análise</button>
+        </div>
+
+        <!-- TABELA DE DESEMPENHO -->
+        <div class="dash-secao" id="dash-resultados" style="display: none;">
+          <span class="dash-titulo">Consumo no Período</span>
+          <div class="tabela-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 30px;">#</th>
+                  <th>Material</th>
+                  <th style="text-align:center;">Uso/d</th>
+                  <th style="text-align:center;">Custo/d</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-dash-tabela"></tbody>
+            </table>
+          </div>
+
+          <!-- GRÁFICO DE PIZZA -->
+          <div class="form-group" style="margin-top: 20px;">
+            <label>Visão do Gráfico de Pizza</label>
+            <select id="dash-modo-pizza" onchange="atualizarGraficoPizza()">
+              <option value="custo">Custo Total (R$ Compras)</option>
+              <option value="frequencia">Frequência de Saída (Eventos)</option>
+            </select>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-pizza"></canvas>
+          </div>
+
+          <!-- GRÁFICO DE BARRAS COMPARATIVO -->
+          <span class="dash-titulo" style="margin-top:30px;">Histórico Temporal</span>
+          <p style="font-size: 11px; color: #777; margin-bottom: 5px;">Selecione itens na tabela para comparar Entrada vs Saída</p>
+          <div class="chart-container" style="height: 300px;">
+            <canvas id="chart-barras"></canvas>
+          </div>
+        </div>
+
+        <button class="btn-voltar" onclick="mostrarTela('tela-menu')" style="width:100%">Voltar</button>
+      </div>
+
+    </div>
+    <div class="rodape-creditos">Desenvolvido por <strong>Roger Schiavon</strong> © 2026</div>
+  </div>
+  <div id="toast"></div>
+
+  <script>
+    let dadosResumoGlobais = [];
+    let operadorLogado = "";
+    
+    // VARIÁVEIS DASHBOARD
+    let dashDataGlobal = null; 
+    let chartPizza = null;
+    let chartBarras = null;
+
+    window.onload = () => { 
+      // Remove o erro visual se o usuário começar a corrigir o campo
+      document.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', function() { this.classList.remove('campo-invalido'); });
+        el.addEventListener('change', function() { this.classList.remove('campo-invalido'); });
+      });
+
+      // Verifica se há login salvo e status ADM (LocalStorage ou SessionStorage para F5)
+      const salvoLocal = localStorage.getItem('app_estoque_operador');
+      const salvoSessao = sessionStorage.getItem('app_estoque_operador');
+      const admLocal = localStorage.getItem('app_estoque_is_adm') === 'true';
+      const admSessao = sessionStorage.getItem('app_estoque_is_adm') === 'true';
+      
+      if (salvoLocal || salvoSessao) {
+        operadorLogado = salvoLocal || salvoSessao;
+        const isAdm = admLocal || admSessao;
+        
+        document.getElementById('nome-operador-logado').innerText = operadorLogado;
+        document.getElementById('barra-usuario-topo').style.display = 'flex';
+        
+        // Aplica trava visual de ADM na persistência
+        if (isAdm) {
+          document.getElementById('btn-gestao-rh').style.display = 'block';
+        } else {
+          document.getElementById('btn-gestao-rh').style.display = 'none';
+        }
+        
+        mostrarTela('tela-menu');
+      }
+
+      google.script.run.withSuccessHandler(preencherListas).obterListasParaFormulario();
+      document.getElementById('op-data').value = new Date().toISOString().split('T')[0]; 
+      document.getElementById('op-hora').value = new Date().toTimeString().substring(0,5); 
+
+      // Datas padrão Dashboard (mês atual)
+      const hoje = new Date();
+      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      document.getElementById('dash-inicio').value = primeiroDia.toISOString().split('T')[0];
+      document.getElementById('dash-fim').value = hoje.toISOString().split('T')[0];
+    };
+
+    function efetuarLogin() {
+      const user = document.getElementById('login-user').value;
+      const pass = document.getElementById('login-pass').value;
+      const manter = document.getElementById('login-manter').checked;
+
+      if (!user || !pass) { exibirToast("Preencha Login e Senha", "var(--cor-alerta)"); return; }
+
+      document.getElementById('loading').style.display = 'flex';
+      google.script.run.withSuccessHandler(r => {
+        document.getElementById('loading').style.display = 'none';
+        if (r.sucesso) {
+          operadorLogado = r.nome;
+          document.getElementById('nome-operador-logado').innerText = r.nome;
+          document.getElementById('barra-usuario-topo').style.display = 'flex';
+          
+          // Libera ou trava o menu de RH baseado no retorno do servidor
+          if (r.adm) {
+            document.getElementById('btn-gestao-rh').style.display = 'block';
+          } else {
+            document.getElementById('btn-gestao-rh').style.display = 'none';
+          }
+
+          if (manter) { 
+            localStorage.setItem('app_estoque_operador', r.nome); 
+            localStorage.setItem('app_estoque_is_adm', r.adm);
+          } else { 
+            sessionStorage.setItem('app_estoque_operador', r.nome); 
+            sessionStorage.setItem('app_estoque_is_adm', r.adm);
+          }
+
+          mostrarTela('tela-menu');
+          exibirToast("Bem-vindo, " + r.nome, "var(--cor-sucesso)");
+        } else {
+          exibirToast(r.mensagem, "var(--cor-erro)");
+        }
+      }).autenticarUsuario(user, pass);
+    }
+
+    function efetuarLogout() {
+      localStorage.removeItem('app_estoque_operador');
+      localStorage.removeItem('app_estoque_is_adm');
+      sessionStorage.removeItem('app_estoque_operador');
+      sessionStorage.removeItem('app_estoque_is_adm');
+      
+      operadorLogado = "";
+      document.getElementById('barra-usuario-topo').style.display = 'none';
+      document.getElementById('btn-gestao-rh').style.display = 'none'; // Tranca o menu no logout
+      document.getElementById('login-user').value = "";
+      document.getElementById('login-pass').value = "";
+      mostrarTela('tela-login');
+      exibirToast("Sessão encerrada.");
+    }
+    
+    function preencherListas(d) {
+      let hI = '<option value="">Selecione...</option>';
+d.itens.forEach(i => hI += `<option value="${i.id}">${i.nome} (${i.estoque})</option>`);
+      document.querySelectorAll('.select-item-estoque').forEach(el => el.innerHTML = hI);
+      let hL = '<option value="">Selecione...</option>';
+d.itens.forEach(i => hL += `<option value="${i.id}">${i.nome}</option>`);
+      document.querySelectorAll('.select-item-limpo').forEach(el => el.innerHTML = hL);
+      let hT = '<option value="">Selecione...</option>';
+d.tecnicos.forEach(t => hT += `<option value="${t}">${t}</option>`);
+      document.querySelectorAll('.select-tecnico').forEach(el => el.innerHTML = hT);
+      let hM = '<option value="">Motivo...</option>';
+d.motivos.forEach(m => hM += `<option value="${m}">${m}</option>`);
+      document.querySelectorAll('.select-motivo').forEach(el => el.innerHTML = hM);
+      let hMC = '<option value="">Motivo...</option>';
+d.motivosCanc.forEach(m => hMC += `<option value="${m}">${m}</option>`);
+      document.querySelectorAll('.select-motivo-canc').forEach(el => el.innerHTML = hMC);
+      let hF = '';
+d.fornecedores.forEach(f => hF += `<option value="${f}">`); document.getElementById('lista-fornecedores').innerHTML = hF;
+      document.getElementById('loading').style.display = 'none';
+}
+    
+    function mostrarTela(id) { document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa')); document.getElementById(id).classList.add('ativa');
+}
+    function fecharModal(id) { document.getElementById(id).style.display = 'none';
+}
+    function exibirToast(m, c = "#333") { const t = document.getElementById("toast"); t.innerText = m; t.style.backgroundColor = c;
+t.className = "show"; setTimeout(() => t.className = "", 3500); }
+    function verificarTipo() { document.getElementById('grupo-motivo').style.display = document.getElementById('op-tipo').value === "Saída" ?
+"block" : "none"; }
+    function abrirPendentes() { document.getElementById('loading').style.display = 'flex'; google.script.run.withSuccessHandler(renderizarPendentes).obterComprasPendentes();
+}
+    
+    function renderizarPendentes(compras) {
+      const container = document.getElementById('lista-pendentes');
+container.innerHTML = compras.length === 0 ? '<p>Sem pendências.</p>' : '';
+compras.forEach(c => {
+        let p = JSON.stringify(c).replace(/"/g, '&quot;');
+        container.innerHTML += `<div class="card-compra"><button class="btn-cancelar-card" onclick="abrirModalCancelar('${c.idCompra}', '${c.nomeItem}')">✖</button><div><strong>${c.nomeItem}</strong></div><div class="card-info">Faltam: ${c.qtdComprada - c.qtdRecebida} un | ${c.fornecedor} <br> <strong>Prev: ${c.previsao}</strong></div><button class="btn-receber-card" onclick="abrirModalReceber('${p}')">Receber</button></div>`;
+      });
+      document.getElementById('loading').style.display = 'none'; mostrarTela('tela-pendentes');
+    }
+    
+    function abrirModalReceber(s) { 
+      const c = JSON.parse(s); 
+      const faltam = c.qtdComprada - c.qtdRecebida;
+      
+   
+    document.getElementById('txt-receber-nome').innerText = c.nomeItem + ` (Faltam: ${faltam} un)`; 
+      document.getElementById('rec-id-compra').value = c.idCompra; 
+      document.getElementById('rec-id-item').value = c.idItem;
+document.getElementById('rec-faltam').value = faltam;
+      
+      document.getElementById('rec-tipo-chegada').value = "Completo";
+      document.getElementById('rec-qtd').value = "";
+      document.getElementById('rec-encerrar').checked = false;
+      document.getElementById('rec-motivo').selectedIndex = 0;
+      
+      toggleTipoRecebimento();
+      document.getElementById('modal-receber').style.display = 'flex';
+}
+    
+    function toggleTipoRecebimento() {
+      const tipo = document.getElementById('rec-tipo-chegada').value;
+if (tipo === "Completo") {
+        document.getElementById('div-rec-qtd').style.display = 'none';
+        document.getElementById('div-rec-checkbox').style.display = 'none';
+document.getElementById('grupo-rec-motivo').style.display = 'none';
+      } else {
+        document.getElementById('div-rec-qtd').style.display = 'block';
+        document.getElementById('div-rec-checkbox').style.display = 'flex';
+        toggleMotivoEncerramento();
+}
+    }
+    
+    function toggleMotivoEncerramento() { 
+      const tipo = document.getElementById('rec-tipo-chegada').value;
+if (tipo === "Parcial" && document.getElementById('rec-encerrar').checked) {
+        document.getElementById('grupo-rec-motivo').style.display = 'block';
+} else {
+        document.getElementById('grupo-rec-motivo').style.display = 'none';
+}
+    }
+    
+    function processarRecebimento() {
+      const tipoChegada = document.getElementById('rec-tipo-chegada').value;
+      const faltam = Number(document.getElementById('rec-faltam').value);
+      
+      let qtdForm;
+      let forcarEncerrar = false;
+      let motivoFalta = "";
+
+      if (tipoChegada === "Completo") {
+        qtdForm = faltam;
+} else {
+        qtdForm = Number(document.getElementById('rec-qtd').value);
+        forcarEncerrar = document.getElementById('rec-encerrar').checked;
+        motivoFalta = document.getElementById('rec-motivo').value;
+if (!qtdForm || qtdForm <= 0) { exibirToast("Digite uma quantidade válida!", "var(--cor-alerta)"); return;
+}
+        
+        if (qtdForm >= faltam) { 
+          exibirToast("Se chegou tudo, mude a opção para Completo lá em cima!", "var(--cor-alerta)");
+return; 
+        }
+        
+        if (forcarEncerrar && !motivoFalta) { exibirToast("Selecione o motivo de encerrar o pedido!", "var(--cor-alerta)");
+return; }
+      }
+      
+      const d = { 
+        tipo: "RecebimentoCompra", 
+        idCompra: document.getElementById('rec-id-compra').value, 
+        idItem: document.getElementById('rec-id-item').value, 
+        quantidade: qtdForm, 
+        tecnico: operadorLogado, 
+        operador: operadorLogado, 
+        forcarEncerramento: forcarEncerrar, 
+       
+  motivoEncerramento: motivoFalta, 
+        dataOcorrencia: new Date().toISOString().split('T')[0], 
+        horaOcorrencia: new Date().toTimeString().substring(0,5) 
+      };
+fecharModal('modal-receber'); document.getElementById('loading').style.display = 'flex';
+      google.script.run.withSuccessHandler(r => { exibirToast(r.mensagem, r.sucesso ? "var(--cor-sucesso)" : "var(--cor-erro)"); abrirPendentes(); }).registrarMovimentacao(d);
+}
+    
+    function abrirModalCancelar(id, n) { document.getElementById('canc-id-compra').value = id; document.getElementById('txt-cancelar-nome').innerText = n;
+document.getElementById('modal-cancelar').style.display = 'flex'; }
+    
+    function processarCancelamento() {
+      const d = { idCompra: document.getElementById('canc-id-compra').value, motivo: document.getElementById('canc-motivo').value, operador: operadorLogado };
+fecharModal('modal-cancelar'); document.getElementById('loading').style.display = 'flex';
+      google.script.run.withSuccessHandler(r => { exibirToast(r.mensagem, r.sucesso ? "var(--cor-sucesso)" : "var(--cor-erro)"); abrirPendentes(); }).cancelarCompraPendente(d);
+}
+    
+    function salvarOperacao() {
+      const tipo = document.getElementById('op-tipo');
+      const data = document.getElementById('op-data');
+      const hora = document.getElementById('op-hora');
+      const item = document.getElementById('op-item');
+      const qtd = document.getElementById('op-qtd');
+      const tecnico = document.getElementById('op-tecnico');
+      const motivo = document.getElementById('op-motivo');
+
+      [tipo, data, hora, item, qtd, tecnico, motivo].forEach(el => el.classList.remove('campo-invalido'));
+
+      let valido = true;
+      if (!tipo.value) { tipo.classList.add('campo-invalido'); valido = false; }
+      if (!data.value) { data.classList.add('campo-invalido'); valido = false; }
+      if (!hora.value) { hora.classList.add('campo-invalido'); valido = false; }
+      if (!item.value) { item.classList.add('campo-invalido'); valido = false; }
+      if (!qtd.value || qtd.value <= 0) { qtd.classList.add('campo-invalido'); valido = false; }
+      if (!tecnico.value) { tecnico.classList.add('campo-invalido'); valido = false; }
+      if (tipo.value === "Saída" && !motivo.value) { motivo.classList.add('campo-invalido'); valido = false; }
+
+      if (!valido) {
+        exibirToast("Preencha os campos em vermelho!", "var(--cor-alerta)");
+        return;
+      }
+
+      const d = { tipo: tipo.value, idItem: item.value, quantidade: qtd.value, tecnico: tecnico.value, operador: operadorLogado, dataOcorrencia: data.value, horaOcorrencia: hora.value, motivo: motivo.value };
+      document.getElementById('loading').style.display = 'flex';
+      google.script.run.withSuccessHandler(r => { document.getElementById('loading').style.display = 'none'; exibirToast(r.mensagem, r.sucesso ? "var(--cor-sucesso)" : "var(--cor-erro)"); if(r.sucesso) mostrarTela('tela-menu'); }).registrarMovimentacao(d);
+}
+    
+    function salvarCompra() {
+      const item = document.getElementById('compra-item');
+      const fornecedor = document.getElementById('compra-fornecedor');
+      const qtd = document.getElementById('compra-qtd');
+      const valor = document.getElementById('compra-valor');
+      const previsao = document.getElementById('compra-previsao');
+
+      [item, fornecedor, qtd, valor, previsao].forEach(el => el.classList.remove('campo-invalido'));
+
+      let valido = true;
+      if (!item.value) { item.classList.add('campo-invalido'); valido = false; }
+      if (!fornecedor.value) { fornecedor.classList.add('campo-invalido'); valido = false; }
+      if (!qtd.value || qtd.value <= 0) { qtd.classList.add('campo-invalido'); valido = false; }
+      if (!valor.value || valor.value < 0) { valor.classList.add('campo-invalido'); valido = false; }
+      if (!previsao.value) { previsao.classList.add('campo-invalido'); valido = false; }
+
+      if (!valido) {
+        exibirToast("Preencha os campos em vermelho!", "var(--cor-alerta)");
+        return;
+      }
+
+      const d = { tipo: "Compra", idItem: item.value, fornecedor: fornecedor.value, quantidade: qtd.value, valorTotal: valor.value, dataPrevista: previsao.value, operador: operadorLogado, dataOcorrencia: new Date().toISOString().split('T')[0], horaOcorrencia: new Date().toTimeString().substring(0,5) };
+      document.getElementById('loading').style.display = 'flex';
+      google.script.run.withSuccessHandler(r => { document.getElementById('loading').style.display = 'none'; exibirToast(r.mensagem, r.sucesso ? "var(--cor-sucesso)" : "var(--cor-erro)"); if(r.sucesso) mostrarTela('tela-menu'); }).registrarMovimentacao(d);
+}
+    
+    function abrirResumo() { 
+      document.getElementById('loading').style.display = 'flex';
+google.script.run.withSuccessHandler(d => { 
+        dadosResumoGlobais = d; 
+        aplicarOrdem(); 
+        document.getElementById('loading').style.display = 'none'; 
+        mostrarTela('tela-resumo'); 
+      }).obterDadosResumo();
+}
+    
+    function aplicarOrdem() { 
+      let l = [...dadosResumoGlobais];
+if (document.getElementById('ordem-resumo').value === 'alfabetica') {
+        l.sort((a,b) => a.nome.localeCompare(b.nome));
+} else {
+        const getPeso = (i) => {
+          if (i.critico !== -1 && i.qtd <= i.critico) return 1;
+if (i.baixo !== -1 && i.qtd <= i.baixo) return 2;
+          if (i.critico !== -1 || i.baixo !== -1) return 3;
+return 4;
+        };
+
+        l.sort((a,b) => {
+          let pA = getPeso(a), pB = getPeso(b);
+          
+          if (pA !== pB) return pA - pB;
+          
+          if (pA === 1) return (a.critico > 0 ? a.qtd/a.critico : a.qtd) - (b.critico > 0 ? b.qtd/b.critico : b.qtd);
+          
+   
+        if (pA === 2) return (a.baixo > 0 ? a.qtd/a.baixo : a.qtd) - (b.baixo > 0 ? b.qtd/b.baixo : b.qtd);
+          
+          return a.nome.localeCompare(b.nome);
+        });
+}
+      
+      let h = '';
+l.forEach(i => { 
+        let cl = (i.qtd <= i.critico && i.critico !== -1) ? "tr-critico" : (i.qtd <= i.baixo && i.baixo !== -1) ? "tr-baixo" : "tr-ok"; 
+        h += `<tr class="${cl}"><td>${i.nome}</td><td style="text-align:center;">${i.qtd}</td><td style="text-align:center;">${i.baixo === -1 ? '-' : i.baixo}</td><td style="text-align:center;">${i.critico === -1 ? '-' : i.critico}</td></tr>`; 
+      });
+document.getElementById('corpo-resumo').innerHTML = h || '<tr><td colspan="4">Nada encontrado.</td></tr>'; 
+      filtrarResumo(); 
+    }
+    
+    function filtrarResumo() { 
+      const t = document.getElementById('busca-resumo').value.toLowerCase();
+document.querySelectorAll('#corpo-resumo tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(t) ? '' : 'none');
+}
+    
+    function processarEnvioMassa() { 
+fecharModal('modal-confirm'); 
+      document.getElementById('loading').style.display = 'flex'; 
+      google.script.run.withSuccessHandler(r => { 
+        exibirToast(r.mensagem); 
+        document.getElementById('loading').style.display = 'none'; 
+      }).notificarTodosCriticos(operadorLogado);
+}
+
+    /* GESTÃO DE RH SCRIPT */
+    function abrirGestaoRH() {
+      document.getElementById('loading').style.display = 'flex';
+      google.script.run.withSuccessHandler(lista => {
+        renderizarListaRH(lista);
+        document.getElementById('loading').style.display = 'none';
+        mostrarTela('tela-rh');
+      }).obterListaRH();
+    }
+
+    function renderizarListaRH(lista) {
+      const container = document.getElementById('lista-rh-ativos');
+      container.innerHTML = lista.length === 0 ? '<p style="font-size:13px; color:#999;">Nenhum membro ativo.</p>' : '';
+      lista.forEach(m => {
+        container.innerHTML += `
+          <div class="item-rh">
+            <span><strong>${m.nome}</strong> (${m.funcao})</span>
+            <button class="btn-excluir-rh" onclick="excluirRH('${m.nome}')">Excluir</button>
+          </div>
+        `;
+      });
+    }
+
+    function toggleCamposRH() {
+      const tipo = document.getElementById('rh-tipo').value;
+      document.getElementById('campos-operador').style.display = (tipo === "Operador") ? 'block' : 'none';
+    }
+
+    function salvarNovoRH() {
+      const tipo = document.getElementById('rh-tipo').value;
+      const nome = document.getElementById('rh-nome').value;
+      
+      const d = { tipo: tipo, nome: nome };
+      
+      if (!nome) { exibirToast("Nome é obrigatório", "var(--cor-alerta)"); return; }
+
+      if (tipo === "Operador") {
+        d.email = document.getElementById('rh-email').value;
+        d.login = document.getElementById('rh-login').value;
+        d.senha = document.getElementById('rh-senha').value;
+        if (!d.email || !d.login || !d.senha) { exibirToast("Preencha todos os campos do operador", "var(--cor-alerta)"); return; }
+      }
+
+      document.getElementById('loading').style.display = 'flex';
+      google.script.run.withSuccessHandler(r => {
+        exibirToast(r.mensagem, r.sucesso ? "var(--cor-sucesso)" : "var(--cor-erro)");
+        if (r.sucesso) {
+          // Limpar campos
+          document.getElementById('rh-nome').value = "";
+          document.getElementById('rh-email').value = "";
+          document.getElementById('rh-login').value = "";
+          document.getElementById('rh-senha').value = "";
+          abrirGestaoRH();
+          // Atualiza listas do sistema silenciosamente
+          google.script.run.withSuccessHandler(preencherListas).obterListasParaFormulario();
+        } else {
+           document.getElementById('loading').style.display = 'none';
+        }
+      }).adicionarMembroRH(d);
+    }
+
+    function excluirRH(nome) {
+      if (!confirm("Deseja realmente tornar " + nome + " inativo?")) return;
+      document.getElementById('loading').style.display = 'flex';
+      google.script.run.withSuccessHandler(r => {
+        exibirToast(r.mensagem, r.sucesso ? "var(--cor-sucesso)" : "var(--cor-erro)");
+        abrirGestaoRH();
+        google.script.run.withSuccessHandler(preencherListas).obterListasParaFormulario();
+      }).desativarMembroRH(nome);
+    }
+
+    /* DASHBOARD LÓGICA */
+    function abrirDashboard() {
+      mostrarTela('tela-dashboard');
+      // Não gera análise automático para poupar servidor
+    }
+
+    function gerarAnaliseDashboard() {
+      const inicio = document.getElementById('dash-inicio').value;
+      const fim = document.getElementById('dash-fim').value;
+
+      if (!inicio || !fim) { exibirToast("Selecione o período!", "var(--cor-alerta)"); return; }
+
+      document.getElementById('loading').style.display = 'flex';
+      google.script.run.withSuccessHandler(data => {
+        document.getElementById('loading').style.display = 'none';
+        dashDataGlobal = data;
+        renderizarTabelaDash(data.itens);
+        document.getElementById('dash-resultados').style.display = 'block';
+        atualizarGraficoPizza();
+        // Inicializa gráfico de barras vazio
+        atualizarGraficoBarras([]);
+      }).obterDadosDashboard(inicio, fim);
+    }
+
+    function renderizarTabelaDash(itens) {
+      let h = '';
+      itens.forEach(i => {
+        h += `<tr>
+          <td><input type="checkbox" class="check-dash" value="${i.id}" onchange="coletarItensMarcados()"></td>
+          <td>${i.nome}</td>
+          <td style="text-align:center;">${i.usoMedio.toFixed(2)}</td>
+          <td style="text-align:center;">R$ ${i.custoMedioDia.toFixed(2)}</td>
+        </tr>`;
+      });
+      document.getElementById('corpo-dash-tabela').innerHTML = h || '<tr><td colspan="4">Sem dados no período.</td></tr>';
+    }
+
+    function atualizarGraficoPizza() {
+      const modo = document.getElementById('dash-modo-pizza').value;
+      const ctx = document.getElementById('chart-pizza').getContext('2d');
+      
+      const labels = dashDataGlobal.itens.map(i => i.nome);
+      const data = dashDataGlobal.itens.map(i => modo === 'custo' ? i.gastoTotal : i.frequenciaSaida);
+      
+      if (chartPizza) chartPizza.destroy();
+      
+      chartPizza = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: ['#57326b', '#ce184c', '#f37021', '#2980b9', '#27ae60', '#f39c12', '#9b59b6', '#34495e']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function coletarItensMarcados() {
+      const marcados = Array.from(document.querySelectorAll('.check-dash:checked')).map(cb => cb.value);
+      atualizarGraficoBarras(marcados);
+    }
+
+    function atualizarGraficoBarras(idsSelecionados) {
+      const ctx = document.getElementById('chart-barras').getContext('2d');
+      const labels = dashDataGlobal.timeline.labels;
+      const datasets = [];
+
+      idsSelecionados.forEach((id, index) => {
+        const item = dashDataGlobal.itens.find(i => i.id === id);
+        const historico = dashDataGlobal.timeline.dadosPorItem[id] || { entradas: [], saidas: [] };
+        
+        // Cor dinâmica baseada no index para diferenciar itens
+        const baseColor = ['#2980b9', '#ce184c', '#27ae60', '#f37021', '#57326b'][index % 5];
+
+        datasets.push({
+          label: item.nome + ' (Entrada)',
+          data: historico.entradas,
+          backgroundColor: '#27ae60', // Verde para entradas
+          borderColor: '#27ae60',
+          borderWidth: 1,
+          stack: 'stack' + index
+        });
+
+        datasets.push({
+          label: item.nome + ' (Saída)',
+          data: historico.saidas,
+          backgroundColor: '#ce184c', // Vermelho para saídas
+          borderColor: '#ce184c',
+          borderWidth: 1,
+          stack: 'stack' + index
+        });
+      });
+
+      if (chartBarras) chartBarras.destroy();
+
+      chartBarras = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, stacked: false },
+            x: { stacked: false }
+          },
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 10, font: { size: 9 } } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
